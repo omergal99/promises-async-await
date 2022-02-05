@@ -46,6 +46,45 @@ const myPromiseAll = async (tasks) => {
   })
 }
 
+export const myPromiseAllSettledByObject = async (tasks) => {
+  const results = await myPromiseAll(Object.entries(tasks).map(async ([key, promise]) => {
+    try {
+      const res = await promise;
+      return { status: 'fulfilled', value: res, key };
+    } catch (err) {
+      return { status: 'rejected', reason: err, key };
+    }
+  }));
+  return results.reduce((acc, next) => {
+    const key = next.key;
+    delete next.key;
+    acc[key] = next;
+    return acc;
+  }, {})
+}
+
+
+// Problem with same key
+export const myPromiseAllSettledIngredients = async (tasks) => {
+
+  const results = await myPromiseAll(tasks.map(async task => {
+    const key = task.key || task.function.name
+    try {
+      const res = await task.function(...task.args);
+      return { status: 'fulfilled', value: res, key };
+    } catch (err) {
+      return { status: 'rejected', reason: err, key };
+    }
+  }));
+  return results.reduce((acc, next) => {
+    const key = next.key;
+    delete next.key;
+    acc[key] = next;
+    return acc;
+  }, {});
+}
+
+
 const byNewPromise = async (arr) => {
   return new Promise(async (resolve, reject) => {
     let finisedTasksCounter = 0;

@@ -1,4 +1,4 @@
-import { myPromiseAllSettled } from './myPromises.js'
+import { myPromiseAllSettled, myPromiseAllSettledByObject, myPromiseAllSettledIngredients } from './myPromises.js'
 
 const sleepReject = (ms) => {
     return new Promise((_, reject) => {
@@ -23,13 +23,13 @@ const getPromise2 = () => sleepResolve(500);
 const getPromise3 = () => sleepResolve(1500);
 const getPromiseList = () => [getPromise1(), getPromise2(), getPromise3()];
 
-const thenCatchFunction = () => {
+const thenCatchFunction = (tasks) => {
     const promisesRes = [];
-    return getPromise1().then(res => {
+    return tasks[0].then(res => {
         promisesRes.push(res);
-        return getPromise2().then(res => {
+        return tasks[1].then(res => {
             promisesRes.push(res);
-            return getPromise3().then(res => {
+            return tasks[2].then(res => {
                 promisesRes.push(res);
                 return promisesRes;
             }).catch(err => {
@@ -43,11 +43,11 @@ const thenCatchFunction = () => {
     })
 }
 
-const asyncAwaitFunction = async () => {
+const asyncAwaitFunction = async (tasks) => {
     let promisesRes = [];
-    const promise1 = getPromise1();
-    const promise2 = getPromise2();
-    const promise3 = getPromise3();
+    const promise1 = tasks[0];
+    const promise2 = tasks[1];
+    const promise3 = tasks[2];
     try {
         const promise1Res = await promise1;
         promisesRes.push(promise1Res);
@@ -70,11 +70,11 @@ const asyncAwaitFunction = async () => {
 }
 
 // implement Promise.allSettled using Promise.All
-const promiseAllFunction = async () => {
+const promiseAllFunction = async (tasks) => {
     let promisesRes, promiseRejError;
     try {
         // promisesRes async await
-        promisesRes = await Promise.all(getPromiseList().map(async promise => {
+        promisesRes = await Promise.all(tasks.map(async promise => {
             try {
                 const res = await promise;
                 return { status: 'fulfilled', value: res, };
@@ -90,7 +90,6 @@ const promiseAllFunction = async () => {
         // }));
     } catch (err) { // handle the catch if one faild and there is no catch for him
         promiseRejError = err;
-        console.log({ err });
         throw err;
     } finally {
         if (promiseRejError) {
@@ -100,13 +99,12 @@ const promiseAllFunction = async () => {
     }
 }
 
-const promiseAllSettledFunction = async () => {
+const promiseAllSettledFunction = async (tasks) => {
     let promisesRes, promiseRejError;
     try {
-        promisesRes = await Promise.allSettled(getPromiseList());
+        promisesRes = await Promise.allSettled(tasks);
     } catch (err) {
         promiseRejError = err;
-        console.log({ err });
         throw err;
     } finally {
         if (promiseRejError) {
@@ -123,12 +121,27 @@ const init = async () => {
         asyncAwaitFunction,
         promiseAllFunction,
         promiseAllSettledFunction,
-    ].map(task => {
-        return task();
-    })
-
-    const res = await myPromiseAllSettled(tasks);
+    ]
+    const res = await myPromiseAllSettled(tasks.map(task => task(getPromiseList())));
     console.log('res', { res }); // TODO: remove log
+
+    // const res2 = await myPromiseAllSettledByObject({
+    //     thenCatchFunction: thenCatchFunction(),
+    //     asyncAwaitFunction: asyncAwaitFunction(),
+    //     promiseAllFunction: promiseAllFunction(),
+    //     promiseAllSettledFunction: promiseAllSettledFunction(),
+    // });
+    // console.log('res2', res2); // TODO: remove log
+
+
+    // const res3 = await myPromiseAllSettledIngredients([
+    //     { function: thenCatchFunction, args: [] },
+    //     { function: asyncAwaitFunction, args: [], key: 'mamaam' },
+    //     { function: promiseAllFunction, args: [], key: 'blabla' },
+    //     { function: promiseAllSettledFunction, args: [getPromiseList()] },
+    // ])
+    // console.log('res3', res3); // TODO: remove log
+
 
 }
 init()
